@@ -1,16 +1,242 @@
 ---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import NoteCard from '../components/NoteCard.astro';
+import SearchBar from '../components/SearchBar.astro';
+import TagFilter from '../components/TagFilter.astro';
 
+const allNotes = await getCollection('notes');
+const featuredNotes = allNotes
+  .filter((note) => note.data.featured)
+  .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
+  .slice(0, 6);
+
+const recentNotes = allNotes
+  .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
+  .slice(0, 6);
+
+const allTags = allNotes.flatMap((note) => note.data.tags);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Hello World</title>
-	</head>
-	<body>
-		<h1>Astro Hello World</h1>
-	</body>
-</html>
+<BaseLayout title="Personal Knowledge Base" description="A modern knowledge base for learning and reference">
+  <div class="homepage">
+    <section class="hero">
+      <div class="container">
+        <h1 class="hero-title">Welcome to Your Knowledge Base</h1>
+        <p class="hero-description">
+          Discover, learn, and reference your notes. Everything you need in one place.
+        </p>
+        <div class="hero-search">
+          <SearchBar />
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Featured Notes</h2>
+          <a href="/notes" class="view-all">View All →</a>
+        </div>
+        <div class="notes-grid" id="notes-grid">
+          {featuredNotes.map((note) => (
+            <NoteCard note={note} />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Browse by Tag</h2>
+        </div>
+        <TagFilter tags={allTags} />
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Recent Notes</h2>
+          <a href="/notes" class="view-all">View All →</a>
+        </div>
+        <div class="notes-grid">
+          {recentNotes.map((note) => (
+            <NoteCard note={note} />
+          ))}
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  // Store all notes data for client-side filtering
+  const allNotesData = [
+    ...document.querySelectorAll('.note-card')
+  ].map((card) => {
+    const cardElement = card as HTMLElement;
+    const link = cardElement.querySelector('a') as HTMLAnchorElement | null;
+    const title = cardElement.querySelector('.card-title')?.textContent || '';
+    const description = cardElement.querySelector('.card-description')?.textContent || '';
+    const tags = Array.from(cardElement.querySelectorAll('.tag')).map((tag) => tag.textContent || '');
+    return {
+      element: cardElement,
+      title: title.toLowerCase(),
+      description: description.toLowerCase(),
+      tags,
+      href: link?.href || '',
+    };
+  });
+
+  // Handle search
+  window.addEventListener('search', ((e: CustomEvent) => {
+    const query = e.detail.query;
+    filterNotes(query, '');
+  }) as EventListener);
+
+  // Handle tag filter
+  window.addEventListener('filter', ((e: CustomEvent) => {
+    const tag = e.detail.tag;
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const query = searchInput?.value.toLowerCase() || '';
+    filterNotes(query, tag);
+  }) as EventListener);
+
+  function filterNotes(query: string, selectedTag: string) {
+    const grid = document.getElementById('notes-grid');
+    if (!grid) return;
+
+    allNotesData.forEach((note) => {
+      const matchesSearch = !query || 
+        note.title.includes(query) || 
+        note.description.includes(query) ||
+        note.tags.some((tag) => tag.toLowerCase().includes(query));
+      
+      const matchesTag = !selectedTag || note.tags.includes(selectedTag);
+
+      if (matchesSearch && matchesTag) {
+        note.element.style.display = '';
+      } else {
+        note.element.style.display = 'none';
+      }
+    });
+  }
+</script>
+
+<style>
+  .homepage {
+    width: 100%;
+  }
+
+  .hero {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #7c3aed 100%);
+    color: white;
+    padding: 4rem 0 5rem;
+    text-align: center;
+  }
+
+  .hero .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .hero-description {
+    font-size: 1.25rem;
+    margin-bottom: 2.5rem;
+    opacity: 0.95;
+    line-height: 1.6;
+  }
+
+  .hero-search {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .content-section {
+    padding: 4rem 0;
+  }
+
+  .content-section:nth-child(even) {
+    background: var(--color-surface);
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .view-all {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+
+  .view-all:hover {
+    opacity: 0.8;
+  }
+
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      padding: 3rem 0 4rem;
+    }
+
+    .hero-title {
+      font-size: 2rem;
+    }
+
+    .hero-description {
+      font-size: 1.125rem;
+    }
+
+    .content-section {
+      padding: 3rem 0;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+    }
+
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .notes-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+</style>

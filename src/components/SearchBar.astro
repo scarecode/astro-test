@@ -1,0 +1,111 @@
+---
+---
+
+<div class="search-container">
+  <div class="search-wrapper">
+    <svg class="search-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19 19L14.65 14.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <input
+      type="text"
+      id="search-input"
+      class="search-input"
+      placeholder="Search notes..."
+      autocomplete="off"
+    />
+    <button id="clear-search" class="clear-button" style="display: none;" aria-label="Clear search">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const clearButton = document.getElementById('clear-search') as HTMLButtonElement;
+  
+  if (searchInput && clearButton) {
+    // Show/hide clear button based on input
+    searchInput.addEventListener('input', () => {
+      clearButton.style.display = searchInput.value ? 'block' : 'none';
+    });
+
+    // Clear search
+    clearButton.addEventListener('click', () => {
+      searchInput.value = '';
+      clearButton.style.display = 'none';
+      searchInput.dispatchEvent(new Event('input'));
+      searchInput.focus();
+    });
+
+    // Dispatch custom event for filtering
+    searchInput.addEventListener('input', (e) => {
+      const query = (e.target as HTMLInputElement).value.toLowerCase();
+      window.dispatchEvent(new CustomEvent('search', { detail: { query } }));
+    });
+  }
+</script>
+
+<style>
+  .search-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    font-size: 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    transition: all 0.2s;
+    outline: none;
+  }
+
+  .search-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .search-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  .clear-button {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .clear-button:hover {
+    background: var(--color-border);
+    color: var(--color-text);
+  }
+</style>

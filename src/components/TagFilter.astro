@@ -1,0 +1,82 @@
+---
+interface Props {
+  tags: string[];
+  selectedTag?: string;
+}
+
+const { tags, selectedTag } = Astro.props;
+const uniqueTags = [...new Set(tags)].sort();
+---
+
+<div class="tag-filter">
+  <button
+    class={`tag-button ${!selectedTag ? 'active' : ''}`}
+    data-tag=""
+    data-filter="all"
+  >
+    All
+  </button>
+  {uniqueTags.map((tag) => (
+    <button
+      class={`tag-button ${selectedTag === tag ? 'active' : ''}`}
+      data-tag={tag}
+      data-filter={tag}
+    >
+      {tag}
+    </button>
+  ))}
+</div>
+
+<script>
+  const tagButtons = document.querySelectorAll('.tag-button');
+  
+  tagButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const tag = (button as HTMLButtonElement).dataset.tag || '';
+      window.dispatchEvent(new CustomEvent('filter', { detail: { tag } }));
+      
+      // Update active state
+      tagButtons.forEach((btn) => btn.classList.remove('active'));
+      button.classList.add('active');
+    });
+  });
+</script>
+
+<style>
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  .tag-button {
+    padding: 0.5rem 1.25rem;
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tag-button:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateY(-2px);
+  }
+
+  .tag-button.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .tag-button.active:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+</style>
